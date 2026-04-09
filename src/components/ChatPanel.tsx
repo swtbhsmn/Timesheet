@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { MessageSquare, RefreshCw, Send, Sparkles } from 'lucide-react';
 
 interface ChatMessage {
@@ -35,6 +35,15 @@ export default function ChatPanel() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const fetchModels = async () => {
     setError('');
@@ -217,6 +226,7 @@ export default function ChatPanel() {
             </p>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <form className="mt-4 flex gap-2" onSubmit={sendMessage}>
