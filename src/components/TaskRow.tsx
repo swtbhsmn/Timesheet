@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, X, Plus, ChevronDown } from 'lucide-react';
+import { Trash2, X, Plus, ChevronDown, Sparkles } from 'lucide-react';
 import { Task, PREDEFINED_TASK_TYPES } from '../types';
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
 export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly }: Props) {
   const [showTaskDropdown, setShowTaskDropdown] = useState(false);
   const [customTaskInput, setCustomTaskInput] = useState('');
+  const [generatingNotes, setGeneratingNotes] = useState(false);
 
   const toggleTaskType = (type: string) => {
     const updated = task.taskTypes.includes(type)
@@ -34,6 +35,45 @@ export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly
 
   const handleFieldChange = (field: keyof Omit<Task, 'taskTypes'>, value: string) => {
     onChange({ ...task, [field]: value });
+  };
+
+  const generateNotes = async () => {
+    if (!task.tickets.trim() || task.taskTypes.length === 0) {
+      return;
+    }
+
+    setGeneratingNotes(true);
+    try {
+      const prompt = `Generate a concise one-line note for a timesheet entry. Task types: ${task.taskTypes.join(', ')}. Ticket/Reference: ${task.tickets}. Make it professional and brief.`;
+
+      const response = await fetch('http://192.168.31.228:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'mistral:latest', // You can make this configurable later
+          prompt: prompt,
+          stream: false,
+          max_tokens: 100,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const generatedNote = data.response?.trim() || 'Generated note unavailable';
+
+      // Update the notes field with the generated content
+      onChange({ ...task, notes: JSON.parse(generatedNote) });
+    } catch (error) {
+      console.error('Failed to generate notes:', error);
+      // Could add error handling UI here
+    } finally {
+      setGeneratingNotes(false);
+    }
   };
 
   return (
@@ -139,13 +179,23 @@ export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly
 
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
         <div className="sm:col-span-5">
-          <textarea
-            value={task.notes}
-            onChange={e => handleFieldChange('notes', e.target.value)}
-            placeholder="Notes"
-            rows={2}
-            className="w-full px-3 py-2 text-sm rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder-slate-400 text-slate-900 bg-white transition resize-none"
-          />
+          <div className="relative">
+            <textarea
+              value={task.notes}
+              onChange={e => handleFieldChange('notes', e.target.value)}
+              placeholder="Notes"
+              rows={2}
+              className="w-full px-3 py-2 text-sm rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder-slate-400 text-slate-900 bg-white transition resize-none"
+            />
+            <button
+              onClick={generateNotes}
+              disabled={generatingNotes || !task.tickets.trim() || task.taskTypes.length === 0}
+              className="absolute top-1 right-1 p-1.5 text-slate-400 hover:text-blue-600 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors"
+              title="Generate note with AI"
+            >
+              <Sparkles size={14} className={generatingNotes ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
         <div className="sm:col-span-5">
           <textarea

@@ -176,7 +176,7 @@ export default function ChatPanel() {
             className={`rounded-2xl p-3 ${
               message.role === 'user'
                 ? 'bg-slate-100 text-slate-900 self-end'
-                : 'bg-slate-900 text-white'
+                : 'bg-gray-300 '
             }`}
           >
             <p className="text-[13px] leading-5 whitespace-pre-wrap">{message.text}</p>
