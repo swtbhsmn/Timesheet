@@ -8,6 +8,21 @@ interface ChatMessage {
 
 const OLLAMA_BASE = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
 
+// Loading dots component
+const LoadingDots = () => {
+  const [dots, setDots] = useState('...');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev === '...' ? '.' : prev === '.' ? '..' : '...');
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span className="text-slate-500">{dots}</span>;
+};
+
 export default function ChatPanel() {
   const [models, setModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState('');
@@ -65,6 +80,9 @@ export default function ChatPanel() {
     setLoading(true);
     setError('');
 
+    // Add a temporary loading message
+    setMessages(prev => [...prev, { role: 'assistant', text: '...' }]);
+
     try {
       const response = await fetch(`${OLLAMA_BASE}/api/generate`, {
         method: 'POST',
@@ -120,6 +138,18 @@ export default function ChatPanel() {
         }
       }
     } catch (err) {
+      // Replace the loading message with an error message
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (lastMessage.role === 'assistant' && lastMessage.text === '...') {
+          newMessages[newMessages.length - 1] = { 
+            role: 'assistant', 
+            text: 'Sorry, I encountered an error while processing your request.' 
+          };
+        }
+        return newMessages;
+      });
       setError('Unable to send the message to Ollama. Check the model and server availability.');
     } finally {
       setLoading(false);
@@ -179,7 +209,9 @@ export default function ChatPanel() {
                 : 'bg-gray-300 '
             }`}
           >
-            <p className="text-[13px] leading-5 whitespace-pre-wrap">{message.text}</p>
+            <p className="text-[13px] leading-5 whitespace-pre-wrap">
+              {message.text === '...' ? <LoadingDots /> : message.text}
+            </p>
             <p className="mt-2 text-[10px] uppercase tracking-[.2em] opacity-70">
               {message.role === 'user' ? 'You' : message.role === 'assistant' ? 'Ollama' : 'System'}
             </p>
