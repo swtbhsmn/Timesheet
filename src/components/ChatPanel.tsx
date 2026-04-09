@@ -6,7 +6,7 @@ interface ChatMessage {
   text: string;
 }
 
-const OLLAMA_BASE = 'http://192.168.31.228:11434';
+const OLLAMA_BASE = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
 
 export default function ChatPanel() {
   const [models, setModels] = useState<string[]>([]);

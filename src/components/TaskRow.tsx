@@ -46,13 +46,13 @@ export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly
     try {
       const prompt = `Generate a concise one-line note for a timesheet entry. Task types: ${task.taskTypes.join(', ')}. Ticket/Reference: ${task.tickets}. Make it professional and brief.`;
 
-      const response = await fetch('http://192.168.31.228:11434/api/generate', {
+      const response = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL || 'http://127.0.0.1:11434'}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'mistral:latest', // You can make this configurable later
+          model: 'mistral:latest',
           prompt: prompt,
           stream: false,
           max_tokens: 100,
