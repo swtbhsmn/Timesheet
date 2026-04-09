@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, ChevronDown, ChevronUp, Briefcase, Plane, Star } from 'lucide-react';
 import { DayEntry, DayType, Task, LEAVE_TYPES } from '../types';
 import { formatDateDisplay, getDayLabel } from '../utils/dateUtils';
@@ -15,7 +15,23 @@ function createTask(): Task {
 }
 
 export default function DayRow({ entry, defaultHours, onChange }: Props) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`day-expanded-${entry.date}`);
+      return saved ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Save expanded state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`day-expanded-${entry.date}`, JSON.stringify(expanded));
+    } catch (error) {
+      console.warn('Failed to save expanded state to localStorage:', error);
+    }
+  }, [expanded, entry.date]);
 
   const setDayType = (dayType: DayType) => {
     const tasks = dayType === 'working' && entry.tasks.length === 0
@@ -115,7 +131,7 @@ export default function DayRow({ entry, defaultHours, onChange }: Props) {
 
         {isWorking && (
           <button
-            onClick={() => setExpanded(v => !v)}
+            onClick={() => setExpanded((prev: boolean) => !prev)}
             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -151,7 +167,7 @@ export default function DayRow({ entry, defaultHours, onChange }: Props) {
 
       {isWorking && expanded && (
         <div className="px-4 py-3 border-t border-slate-100 flex flex-col gap-2">
-          <div className="grid grid-cols-12 gap-2 px-1 mb-1 hidden sm:grid">
+          <div className="grid grid-cols-12 gap-2 px-1 mb-1 sm:grid">
             <span className="col-span-5 text-xs font-medium text-slate-400 uppercase tracking-wide">Task Type(s)</span>
             <span className="col-span-2 text-xs font-medium text-slate-400 uppercase tracking-wide">Hours</span>
             <span className="col-span-5 text-xs font-medium text-slate-400 uppercase tracking-wide">Ticket / Reference</span>

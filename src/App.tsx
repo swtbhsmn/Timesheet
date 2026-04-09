@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileSpreadsheet } from 'lucide-react';
 import { AppConfig, DayEntry, Task } from './types';
 import { getWorkingDays, getMonthStartISO, getMonthEndISO } from './utils/dateUtils';
@@ -12,16 +12,56 @@ function createTask(): Task {
   return { id: crypto.randomUUID(), taskTypes: [], hours: '', tickets: '', notes: '', clientComment: '' };
 }
 
-export default function App() {
-  const [config, setConfig] = useState<AppConfig>({
-    employeeName: '',
-    startDate: getMonthStartISO(),
-    endDate: getMonthEndISO(),
-    defaultHours: '8',
-  });
+// localStorage helpers
+const loadFromStorage = (key: string, defaultValue: any) => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
 
-  const [entries, setEntries] = useState<DayEntry[]>([]);
-  const [generated, setGenerated] = useState(false);
+const saveToStorage = (key: string, value: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn('Failed to save to localStorage:', error);
+  }
+};
+
+export default function App() {
+  const [config, setConfig] = useState<AppConfig>(() =>
+    loadFromStorage('timesheet-config', {
+      employeeName: '',
+      startDate: getMonthStartISO(),
+      endDate: getMonthEndISO(),
+      defaultHours: '8',
+    })
+  );
+
+  const [entries, setEntries] = useState<DayEntry[]>(() =>
+    loadFromStorage('timesheet-entries', [])
+  );
+
+  const [generated, setGenerated] = useState(() =>
+    loadFromStorage('timesheet-generated', false)
+  );
+
+  // Save config to localStorage whenever it changes
+  useEffect(() => {
+    saveToStorage('timesheet-config', config);
+  }, [config]);
+
+  // Save entries to localStorage whenever they change
+  useEffect(() => {
+    saveToStorage('timesheet-entries', entries);
+  }, [entries]);
+
+  // Save generated state to localStorage whenever it changes
+  useEffect(() => {
+    saveToStorage('timesheet-generated', generated);
+  }, [generated]);
 
   const handleGenerate = () => {
     const days = getWorkingDays(config.startDate, config.endDate);

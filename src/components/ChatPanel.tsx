@@ -25,17 +25,53 @@ const LoadingDots = () => {
 
 export default function ChatPanel() {
   const [models, setModels] = useState<string[]>([]);
-  const [selectedModel, setSelectedModel] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      text: 'Ask me anything! Select an Ollama model and send your question.',
-    },
-  ]);
+  const [selectedModel, setSelectedModel] = useState(() => {
+    try {
+      return localStorage.getItem('chat-selected-model') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem('chat-messages');
+      return saved ? JSON.parse(saved) : [
+        {
+          role: 'assistant',
+          text: 'Ask me anything!',
+        },
+      ];
+    } catch {
+      return [
+        {
+          role: 'assistant',
+          text: 'Ask me anything!',
+        },
+      ];
+    }
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Save selected model to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('chat-selected-model', selectedModel);
+    } catch (error) {
+      console.warn('Failed to save selected model to localStorage:', error);
+    }
+  }, [selectedModel]);
+
+  // Save messages to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('chat-messages', JSON.stringify(messages));
+    } catch (error) {
+      console.warn('Failed to save messages to localStorage:', error);
+    }
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

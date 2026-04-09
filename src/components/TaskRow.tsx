@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Trash2, X, Plus, ChevronDown, Sparkles } from 'lucide-react';
 import { Task, PREDEFINED_TASK_TYPES } from '../types';
 
@@ -12,8 +12,23 @@ interface Props {
 
 export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly }: Props) {
   const [showTaskDropdown, setShowTaskDropdown] = useState(false);
-  const [customTaskInput, setCustomTaskInput] = useState('');
+  const [customTaskInput, setCustomTaskInput] = useState(() => {
+    try {
+      return localStorage.getItem(`task-custom-input-${task.id}`) || '';
+    } catch {
+      return '';
+    }
+  });
   const [generatingNotes, setGeneratingNotes] = useState(false);
+
+  // Save custom input to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(`task-custom-input-${task.id}`, customTaskInput);
+    } catch (error) {
+      console.warn('Failed to save custom task input to localStorage:', error);
+    }
+  }, [customTaskInput, task.id]);
 
   const toggleTaskType = (type: string) => {
     const updated = task.taskTypes.includes(type)
