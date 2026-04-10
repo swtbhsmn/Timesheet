@@ -59,7 +59,7 @@ export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly
 
     setGeneratingNotes(true);
     try {
-      const prompt = `Generate a concise one-line note for a timesheet entry. Task types: ${task.taskTypes.join(', ')}. Ticket/Reference: ${task.tickets}. Make it professional and brief.`;
+      const prompt = `Generate a concise one-line note for a timesheet entry.In string format response, Task types: ${task.taskTypes.join(', ')}. Ticket/Reference: ${task.tickets}. Make it professional and brief.`;
 
       const response = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL || 'http://127.0.0.1:11434'}/api/generate`, {
         method: 'POST',
@@ -67,7 +67,7 @@ export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'mistral:latest',
+          model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma2:2b',
           prompt: prompt,
           stream: false,
           max_tokens: 100,
@@ -82,7 +82,7 @@ export default function TaskRow({ task, defaultHours, onChange, onRemove, isOnly
       const generatedNote = data.response?.trim() || 'Generated note unavailable';
 
       // Update the notes field with the generated content
-      onChange({ ...task, notes: JSON.parse(generatedNote) });
+      onChange({ ...task, notes: generatedNote });
     } catch (error) {
       console.error('Failed to generate notes:', error);
       // Could add error handling UI here
